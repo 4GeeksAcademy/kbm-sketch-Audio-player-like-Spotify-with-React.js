@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  FaPlay,
-  FaPause,
-  FaArrowRight,
-  FaArrowLeft,
-  FaVolumeUp,
-} from "react-icons/fa";
+import { FaPlay, FaPause, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 
 const AudioPlayer = () => {
   const audioRef = useRef(null);
@@ -13,6 +7,7 @@ const AudioPlayer = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(true);
+ 
 
   useEffect(() => {
     fetch("https://playground.4geeks.com/sound/songs")
@@ -20,6 +15,30 @@ const AudioPlayer = () => {
       .then((data) => setPlaylist(data.songs))
       .catch((err) => console.error(err));
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    const relative = playlist[currentTrackIndex]?.url;
+    if (!audio || !relative) return;
+
+    const fullUrl = "https://playground.4geeks.com" + relative;
+    audio.src = fullUrl;
+    audio.load();
+  }, [currentTrackIndex, playlist]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.play().catch((err) => {
+        console.warn("Play blocked or unsupported:", err);
+        setIsPlaying(false);
+      });
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
 
   const togglePlayPause = () => {
     setIsPlaying((prev) => !prev);
@@ -29,6 +48,9 @@ const AudioPlayer = () => {
     setCurrentTrackIndex((i) => (i + 1 < playlist.length ? i + 1 : 0));
   const playPrevious = () =>
     setCurrentTrackIndex((i) => (i - 1 >= 0 ? i - 1 : playlist.length - 1));
+
+ 
+ 
 
   return (
     <div className="audio-player">
@@ -58,7 +80,15 @@ const AudioPlayer = () => {
         </div>
       )}
 
-      <audio ref={audioRef} />
+      <audio ref={audioRef}  onEnded={playNext}>
+        {playlist[currentTrackIndex]?.url && (
+          <source
+            src={playlist[currentTrackIndex].url}
+            type="audio/mp3"
+          />
+        )}
+      
+      </audio>
 
       <div className="controls">
         <button onClick={playPrevious}>
@@ -72,8 +102,10 @@ const AudioPlayer = () => {
         </button>
       </div>
 
+      
+
       <div className="volume-control">
-        <FaVolumeUp />
+        🔊
         <input
           type="range"
           min="0"
